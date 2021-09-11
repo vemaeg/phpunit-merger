@@ -8,6 +8,7 @@ use SebastianBergmann\CodeCoverage\CodeCoverage;
 use SebastianBergmann\CodeCoverage\Driver\Driver;
 use SebastianBergmann\CodeCoverage\Filter as CodeCoverageFilter;
 use SebastianBergmann\CodeCoverage\Report\Clover;
+use SebastianBergmann\CodeCoverage\Report\Cobertura;
 use SebastianBergmann\CodeCoverage\Report\Html\Facade;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -49,6 +50,12 @@ class CoverageCommand extends Command
                 null,
                 InputOption::VALUE_REQUIRED,
                 'The highLowerBound value to be used for HTML format'
+            )
+            ->addOption(
+                'cobertura',
+                null,
+                InputOption::VALUE_NONE,
+                'Export cobertura instead of clover'
             );
     }
 
@@ -69,7 +76,7 @@ class CoverageCommand extends Command
             $codeCoverage->merge($coverage);
         }
 
-        $this->writeCodeCoverage($codeCoverage, $output, $input->getArgument('file'));
+        $this->writeCodeCoverage($codeCoverage, $output, $input->getArgument('file'), $input->getOption('cobertura') ?? false);
         $html = $input->getOption('html');
         if ($html !== null) {
             $lowUpperBound = (int)($input->getOption('lowUpperBound') ?: 50);
@@ -101,9 +108,18 @@ class CoverageCommand extends Command
         $coverage->setTests($tests);
     }
 
-    private function writeCodeCoverage(CodeCoverage $codeCoverage, OutputInterface $output, $file = null)
+    private function writeCodeCoverage(CodeCoverage $codeCoverage, OutputInterface $output, $file = null, bool $cobertura = false)
     {
-        $writer = new Clover();
+        if ($cobertura) {
+            if (!class_exists(Cobertura::class)) {
+                $output->writeln('Cobertura writer not found. Are you using a too old phpunit version? You need at least version 9.4.');
+                exit(1);
+            }
+            $writer = new Cobertura();
+        } else {
+            $writer = new Clover();
+        }
+
         $buffer = $writer->process($codeCoverage, $file);
         if ($file === null) {
             $output->write($buffer);
