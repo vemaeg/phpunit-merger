@@ -143,6 +143,11 @@ class LogCommand extends Command
 
     private function addAttributeValueToTestSuite(\DOMElement $element, $key, $value)
     {
+        // attribute line is invalid on testsuite elements.
+        if ($key === 'line') {
+            return;
+        }
+
         $currentValue = $element->hasAttribute($key) ? $element->getAttribute($key) : 0;
         $element->setAttribute($key, (string)($currentValue + $value));
 
