@@ -95,7 +95,10 @@ class LogCommand extends Command
                 $element->setAttribute('parent', $parent->getAttribute('name'));
                 $attributes = $testSuite['@attributes'] ?? [];
                 foreach ($attributes as $key => $value) {
-                    $value = $key === 'name' ? $value : 0;
+                    // As skipped is not a value of a testcase, but testsuite, we have to retain the value... Maybe
+                    // this is not fully correct, as in case of an merge within a testsuite, this approach does  not
+                    // calculate the new skipped value...
+                    $value = $key === 'name' || $key === 'skipped' ? $value : 0;
                     $element->setAttribute($key, (string)$value);
                 }
                 $parent->appendChild($element);
@@ -135,6 +138,7 @@ class LogCommand extends Command
                 }
                 $this->addAttributeValueToTestSuite($parent, $key, $value);
             }
+            $this->addChildElements($element, $testCase);
             $parent->appendChild($element);
             $this->domElements[$name] = $element;
         }
@@ -150,6 +154,33 @@ class LogCommand extends Command
             if (isset($this->domElements[$parent])) {
                 $this->addAttributeValueToTestSuite($this->domElements[$parent], $key, $value);
             }
+        }
+    }
+
+    private function addChildElements(\DOMElement $element, array $testCase)
+    {
+        // A testcase might contain further nodes, an error for example. But the json_encode/decode-stuff does
+        // not contain both, attributes and values of the nodes. Example:
+        //
+        // <testcase name="testMyTest" class="TestClass" classname="Tests.TestClass" file="src/Tests/TestClass.php" line="26" assertions="0" time="0.151037">
+        //   <error type="TypeError">error with stack trace...</error>
+        // </testcase>
+        //
+        // Remove the @attributes collection (name, class, classname, file, ...)
+        unset($testCase['@attributes']);
+
+        // Iterate over any child elements.
+        foreach ($testCase as $key => $value) {
+            // Unfortunately, the json_encode/decode used with simplexml does not contain both, attributes and values
+            // of child elements.
+            $childNode = $element->ownerDocument->createElement($key);
+
+            // Skipped tests contain an empty tag <skipped />, but the son_encode/decode produces an empty array.
+            if ($value) {
+                $childNode->nodeValue = is_array($value) ? implode(', ', $value) : $value;
+            }
+
+            $element->appendChild($childNode);
         }
     }
 }
