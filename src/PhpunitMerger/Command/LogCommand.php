@@ -51,6 +51,7 @@ class LogCommand extends Command
         $this->document->appendChild($root);
 
         foreach ($finder as $file) {
+            $output->writeln('Processing file ' . $file . '...');
             try {
                 $xml = new \SimpleXMLElement(file_get_contents($file->getRealPath()));
                 $xmlArray = json_decode(json_encode($xml), true);
@@ -96,10 +97,7 @@ class LogCommand extends Command
                 $element->setAttribute('parent', $parent->getAttribute('name'));
                 $attributes = $testSuite['@attributes'] ?? [];
                 foreach ($attributes as $key => $value) {
-                    // As skipped is not a value of a testcase, but testsuite, we have to retain the value... Maybe
-                    // this is not fully correct, as in case of an merge within a testsuite, this approach does  not
-                    // calculate the new skipped value...
-                    $value = $key === 'name' || $key === 'skipped' ? $value : 0;
+                    $value = $key === 'name' ? $value : 0;
                     $element->setAttribute($key, (string)$value);
                 }
                 $parent->appendChild($element);
@@ -112,6 +110,15 @@ class LogCommand extends Command
             }
 
             if (!empty($testSuite['testcase'])) {
+                $attributes = $testSuite['@attributes'] ?? [];
+                foreach ($attributes as $key => $value) {
+                    if (!is_numeric($value)) {
+                        continue;
+                    }
+
+                    $this->addAttributeValueToTestSuite($element, $key, $value);
+                }
+
                 $children = isset($testSuite['testcase']['@attributes']) ? [$testSuite['testcase']] : $testSuite['testcase'];
                 $this->addTestCases($element, $children);
             }
