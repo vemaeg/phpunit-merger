@@ -60,7 +60,7 @@ class CoverageCommand extends Command
             ->addOption(
                 'coverage-cache',
                 null,
-                InputOption::VALUE_NONE,
+                InputOption::VALUE_OPTIONAL,
                 'The cache directory to be used for the code coverage'
             );
     }
@@ -71,7 +71,7 @@ class CoverageCommand extends Command
         $finder->files()
             ->in(realpath($input->getArgument('directory')));
 
-        $codeCoverage = $this->getCodeCoverage($input->getArgument('coverage-cache'));
+        $codeCoverage = $this->getCodeCoverage($output, $input->getOption('coverage-cache'));
 
         foreach ($finder as $file) {
             $coverage = require $file->getRealPath();
@@ -81,7 +81,7 @@ class CoverageCommand extends Command
             $codeCoverage->merge($coverage);
         }
 
-        $this->writeCodeCoverage($codeCoverage, $output, $input->getArgument('file'), $input->getOption('cobertura') ?? false);
+        $this->writeCodeCoverage($codeCoverage,$output, $input->getArgument('file'), $input->getOption('cobertura') ?? false);
         $html = $input->getOption('html');
         if ($html !== null) {
             $lowUpperBound = (int)($input->getOption('lowUpperBound') ?: 50);
@@ -92,7 +92,7 @@ class CoverageCommand extends Command
         return 0;
     }
 
-    private function getCodeCoverage($coverageCache = null)
+    private function getCodeCoverage(OutputInterface $output, $coverageCache = null)
     {
         $driver = null;
         $filter = null;
@@ -104,6 +104,7 @@ class CoverageCommand extends Command
         $codeCoverage = new CodeCoverage($driver, $filter);
 
         if ($coverageCache) {
+            $output->writeln('Using directory ' . $coverageCache . ' as coverage cache...');
             $codeCoverage->cacheStaticAnalysis($coverageCache);
         }
 
