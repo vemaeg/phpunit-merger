@@ -60,7 +60,7 @@ class CoverageCommand extends Command
             ->addOption(
                 'coverage-cache',
                 null,
-                InputOption::VALUE_NONE,
+                InputArgument::OPTIONAL,
                 'The cache directory to be used for the code coverage'
             );
     }
