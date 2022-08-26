@@ -56,6 +56,12 @@ class CoverageCommand extends Command
                 null,
                 InputOption::VALUE_NONE,
                 'Export cobertura instead of clover'
+            )
+            ->addOption(
+                'coverage-cache',
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'The cache directory to be used for the code coverage'
             );
     }
 
@@ -65,7 +71,7 @@ class CoverageCommand extends Command
         $finder->files()
             ->in(realpath($input->getArgument('directory')));
 
-        $codeCoverage = $this->getCodeCoverage();
+        $codeCoverage = $this->getCodeCoverage($output, $input->getOption('coverage-cache'));
 
         foreach ($finder as $file) {
             $coverage = require $file->getRealPath();
@@ -76,7 +82,7 @@ class CoverageCommand extends Command
             $codeCoverage->merge($coverage);
         }
 
-        $this->writeCodeCoverage($codeCoverage, $output, $input->getArgument('file'), $input->getOption('cobertura') ?? false);
+        $this->writeCodeCoverage($codeCoverage,$output, $input->getArgument('file'), $input->getOption('cobertura') ?? false);
         $html = $input->getOption('html');
         if ($html !== null) {
             $lowUpperBound = (int)($input->getOption('lowUpperBound') ?: 50);
@@ -87,7 +93,7 @@ class CoverageCommand extends Command
         return 0;
     }
 
-    private function getCodeCoverage()
+    private function getCodeCoverage(OutputInterface $output, $coverageCache = null)
     {
         $driver = null;
         $filter = null;
@@ -96,7 +102,14 @@ class CoverageCommand extends Command
             $driver = Driver::forLineCoverage($filter);
         }
 
-        return new CodeCoverage($driver, $filter);
+        $codeCoverage = new CodeCoverage($driver, $filter);
+
+        if ($coverageCache) {
+            $output->writeln('Using directory ' . $coverageCache . ' as coverage cache...');
+            $codeCoverage->cacheStaticAnalysis($coverageCache);
+        }
+
+        return $codeCoverage;
     }
 
     private function normalizeCoverage(CodeCoverage $coverage)
