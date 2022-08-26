@@ -82,7 +82,7 @@ class CoverageCommand extends Command
             $codeCoverage->merge($coverage);
         }
 
-        $this->writeCodeCoverage($codeCoverage, $output, $input->getArgument('file'), $input->getOption('cobertura') ?? false);
+        $this->writeCodeCoverage($codeCoverage,$output, $input->getArgument('file'), $input->getOption('cobertura') ?? false);
         $html = $input->getOption('html');
         if ($html !== null) {
             $lowUpperBound = (int)($input->getOption('lowUpperBound') ?: 50);
