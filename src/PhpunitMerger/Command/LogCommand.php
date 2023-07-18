@@ -60,6 +60,10 @@ class LogCommand extends Command
                 }
             } catch (\Exception $exception) {
                 // Initial fallthrough
+                // At the time of the initial test execution, the log file of the test is empty
+                // and therefore file_get_contents returns "" which leads to the ignored error.
+                // .travis.yml uses the app itself later to merge the junit-logs again and
+                // creates a new log.xml
             }
         }
 

@@ -1,3 +1,6 @@
 /.Build
 /.idea
+/.Log
+/.phpunit.cache
+/.phpunit.result.cache
 composer.lock

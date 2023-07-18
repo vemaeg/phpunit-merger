@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Nimut\PhpunitMerger\Command;
 
 use SebastianBergmann\CodeCoverage\CodeCoverage;
-use SebastianBergmann\CodeCoverage\Driver\Driver;
+use SebastianBergmann\CodeCoverage\Driver\Selector;
 use SebastianBergmann\CodeCoverage\Filter as CodeCoverageFilter;
 use SebastianBergmann\CodeCoverage\Report\Clover;
 use SebastianBergmann\CodeCoverage\Report\Cobertura;
 use SebastianBergmann\CodeCoverage\Report\Html\Facade;
+use SebastianBergmann\CodeCoverage\Report\Thresholds;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -94,12 +95,8 @@ class CoverageCommand extends Command
 
     private function getCodeCoverage(OutputInterface $output, $coverageCache = null)
     {
-        $driver = null;
-        $filter = null;
-        if (method_exists(Driver::class, 'forLineCoverage')) {
-            $filter = new CodeCoverageFilter();
-            $driver = Driver::forLineCoverage($filter);
-        }
+        $filter = new CodeCoverageFilter();
+        $driver = (new Selector())->forLineCoverage($filter);
 
         $codeCoverage = new CodeCoverage($driver, $filter);
 
@@ -131,7 +128,7 @@ class CoverageCommand extends Command
 
     private function writeHtmlReport(CodeCoverage $codeCoverage, string $destination, int $lowUpperBound, int $highLowerBound)
     {
-        $writer = new Facade($lowUpperBound, $highLowerBound);
+        $writer = new Facade(thresholds: Thresholds::from($lowUpperBound, $highLowerBound));
         $writer->process($codeCoverage, $destination);
     }
 }
