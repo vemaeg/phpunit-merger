@@ -6,7 +6,6 @@ namespace Nimut\PhpunitMerger\Tests\Command\Coverage;
 
 use Nimut\PhpunitMerger\Command\CoverageCommand;
 use Nimut\PhpunitMerger\Tests\Command\AbstractCommandTest;
-use Prophecy\Argument;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -28,11 +27,11 @@ class CoverageCommandTest extends AbstractCommandTest
                 $this->logDirectory . $this->outputFile,
             ]
         );
-        $output = $this->prophesize(OutputInterface::class);
-        $output->write(Argument::any())->shouldNotBeCalled();
+        $output = $this->createMock(OutputInterface::class);
+        $output->expects(self::never())->method('write');
 
         $command = new CoverageCommand();
-        $command->run($input, $output->reveal());
+        $command->run($input, $output);
 
         $this->assertFileExists($this->logDirectory . $this->outputFile);
     }
@@ -47,11 +46,11 @@ class CoverageCommandTest extends AbstractCommandTest
                 $this->logDirectory . 'coverage/',
             ]
         );
-        $output = $this->prophesize(OutputInterface::class);
-        $output->write(Argument::type('string'))->shouldBeCalled();
+        $output = $this->createMock(OutputInterface::class);
+        $output->expects(self::once())->method('write')->with(self::anything());
 
         $command = new CoverageCommand();
-        $command->run($input, $output->reveal());
+        $command->run($input, $output);
     }
 
     public function testCoverageWritesHtmlReport()
@@ -66,11 +65,11 @@ class CoverageCommandTest extends AbstractCommandTest
                 '--html=' . $this->logDirectory . dirname($this->outputFile),
             ]
         );
-        $output = $this->prophesize(OutputInterface::class);
-        $output->write(Argument::type('string'))->shouldBeCalled();
+        $output = $this->createMock(OutputInterface::class);
+        $output->expects(self::once())->method('write')->with(self::anything());
 
         $command = new CoverageCommand();
-        $command->run($input, $output->reveal());
+        $command->run($input, $output);
 
         $this->assertFileExists($this->logDirectory . $this->outputFile);
     }
@@ -89,11 +88,11 @@ class CoverageCommandTest extends AbstractCommandTest
                 '--highLowerBound=70',
             ]
         );
-        $output = $this->prophesize(OutputInterface::class);
-        $output->write(Argument::type('string'))->shouldBeCalled();
+        $output = $this->createMock(OutputInterface::class);
+        $output->expects(self::once())->method('write')->with(self::anything());
 
         $command = new CoverageCommand();
-        $command->run($input, $output->reveal());
+        $command->run($input, $output);
 
         $this->assertFileExists($this->logDirectory . $this->outputFile);
 
@@ -103,8 +102,8 @@ class CoverageCommandTest extends AbstractCommandTest
             $this->assertStringContainsString('<strong>High</strong>: 70% to 100%', $content);
         } else {
             // Fallback for phpunit < 7.0
-            $this->assertContains('<strong>Low</strong>: 0% to 20%', $content);
-            $this->assertContains('<strong>High</strong>: 70% to 100%', $content);
+            $this->assertStringContainsString('<strong>Low</strong>: 0% to 20%', $content);
+            $this->assertStringContainsString('<strong>High</strong>: 70% to 100%', $content);
         }
     }
 
@@ -122,11 +121,11 @@ class CoverageCommandTest extends AbstractCommandTest
                 $this->logDirectory . $this->outputFile,
             ]
         );
-        $output = $this->prophesize(OutputInterface::class);
-        $output->write(Argument::any())->shouldNotBeCalled();
+        $output = $this->createMock(OutputInterface::class);
+        $output->expects(self::never())->method('write');
 
         $command = new CoverageCommand();
-        $command->run($input, $output->reveal());
+        $command->run($input, $output);
 
         $this->assertFileExists($this->logDirectory . $this->outputFile);
         $this->assertFileExists($this->logDirectory . dirname($this->outputFile) . '/index.html');

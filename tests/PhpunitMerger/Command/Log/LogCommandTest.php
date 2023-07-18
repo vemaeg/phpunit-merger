@@ -27,10 +27,10 @@ class LogCommandTest extends AbstractCommandTest
                 $this->logDirectory . $this->outputFile,
             ]
         );
-        $output = $this->prophesize(OutputInterface::class);
+        $output = $this->createMock(OutputInterface::class);
 
         $command = new LogCommand();
-        $command->run($input, $output->reveal());
+        $command->run($input, $output);
 
         $this->assertFileExists($this->logDirectory . $this->outputFile);
     }
