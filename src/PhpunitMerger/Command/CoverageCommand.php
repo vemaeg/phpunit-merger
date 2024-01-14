@@ -10,6 +10,7 @@ use SebastianBergmann\CodeCoverage\Filter as CodeCoverageFilter;
 use SebastianBergmann\CodeCoverage\Report\Clover;
 use SebastianBergmann\CodeCoverage\Report\Cobertura;
 use SebastianBergmann\CodeCoverage\Report\Html\Facade;
+use SebastianBergmann\CodeCoverage\Report\Text;
 use SebastianBergmann\CodeCoverage\Report\Thresholds;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -63,7 +64,14 @@ class CoverageCommand extends Command
                 null,
                 InputOption::VALUE_OPTIONAL,
                 'The cache directory to be used for the code coverage'
-            );
+            )
+            ->addOption(
+                'coverage-text',
+                null,
+                InputOption::VALUE_NONE,
+                'Export text'
+            )
+        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -85,10 +93,22 @@ class CoverageCommand extends Command
 
         $this->writeCodeCoverage($codeCoverage,$output, $input->getArgument('file'), $input->getOption('cobertura') ?? false);
         $html = $input->getOption('html');
+        $lowUpperBound = (int)($input->getOption('lowUpperBound') ?: 50);
+        $highLowerBound = (int)($input->getOption('highLowerBound') ?: 90);
+
         if ($html !== null) {
-            $lowUpperBound = (int)($input->getOption('lowUpperBound') ?: 50);
-            $highLowerBound = (int)($input->getOption('highLowerBound') ?: 90);
             $this->writeHtmlReport($codeCoverage, $html, $lowUpperBound, $highLowerBound);
+        }
+
+        if ($input->getOption('coverage-text')) {
+            $textReport = new Text(
+                Thresholds::from(
+                    $lowUpperBound,
+                    $highLowerBound,
+                ),
+                showOnlySummary: true,
+            );
+            $output->writeln($textReport->process($codeCoverage));
         }
 
         return 0;
